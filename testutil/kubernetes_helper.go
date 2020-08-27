@@ -3,6 +3,7 @@ package testutil
 import (
 	"errors"
 	"fmt"
+	discovery "k8s.io/api/discovery/v1beta1"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -295,6 +296,20 @@ func (h *KubernetesHelper) GetPodNamesForDeployment(namespace string, deployment
 
 	return pods, nil
 }
+
+func (h *KubernetesHelper) GetEndpointSlicesForService(namespace string, serviceName string) ([]discovery.EndpointSlice, error) {
+	matchLabels := map[string]string{discovery.LabelServiceName: serviceName}
+	selector := labels.Set(matchLabels).String()
+
+	endpoints, err := h.clientset.DiscoveryV1beta1().EndpointSlices(namespace).List(metav1.ListOptions{LabelSelector: selector})
+	if err != nil {
+		return []discovery.EndpointSlice{}, err
+	}
+
+	return endpoints.Items, nil
+	// Get EndpointSlices and then compare the slice with the output from edge (?)
+}
+
 
 // ParseNamespacedResource extracts a namespace and resource name from a string
 // that's in the format namespace/resource. If the strings is in a different
